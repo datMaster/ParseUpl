@@ -2,6 +2,7 @@ package datmaster.com.parseupload;
 
 import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
 import com.parse.ParseException;
 import com.parse.ParseObject;
@@ -25,6 +26,7 @@ public class UploaderLogic implements Runnable,
     private ViewHolder holder;
     private String filePath = "";
     private static final String TAG = "cc";
+    private static final String TAG_PARSE = "PARSE";
     private int index;
     private double itemsCount;
     private ArrayList<UploadItem> itemsList;
@@ -93,14 +95,17 @@ public class UploaderLogic implements Runnable,
                                 status++;
                             }
                             catch (Exception e) {
-                                newitem.dataString += receiveString;
+                                newitem.dataString += "\n" + receiveString;
                             }
                             break;
                         case 2 :
                             newitem.author = receiveString;
-                            status = 0;
+                            status ++;// = 0;
                             itemsList.add(newitem);
                             newitem = new UploadItem();
+                            break;
+                        case 3 :
+                            status = 0;
                             break;
                     }
                 }
@@ -131,15 +136,17 @@ public class UploaderLogic implements Runnable,
         }
 
         updateProgress();
-        ParseObject testObject = new ParseObject("fun");
-        testObject.put("textContent", itemsList.get(index).dataString);
-        testObject.put("author", itemsList.get(index).author);
-        testObject.put("like", 0);
-        testObject.put("groupID", itemsList.get(index).groupId);
+        ParseObject uploadObject = new ParseObject("fun");
+        uploadObject.put("textContent", itemsList.get(index).dataString);
+        uploadObject.put("author", itemsList.get(index).author);
+        uploadObject.put("like", 0);
+        uploadObject.put("groupID", itemsList.get(index).groupId);
         index ++;
-        testObject.saveInBackground(new SaveCallback() {
+        uploadObject.saveInBackground(new SaveCallback() {
             @Override
             public void done(ParseException e) {
+                if (e != null)
+                    holder.statusText.append(e.toString());
                 saving();
             }
         });
@@ -164,7 +171,7 @@ public class UploaderLogic implements Runnable,
         Runnable updateProgress = new Runnable() {
             public void run() {
                 holder.progressBar.setProgress(index);
-                holder.progress.setText(decFormat.format((double)index / itemsCount * 100));
+                holder.progress.setText(decFormat.format((double)index / (itemsCount - 1) * 100));
             }
         };
         updateProgress.run();
